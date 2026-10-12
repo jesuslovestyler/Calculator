@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f2f0eb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#121516" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+  <title>Calculator</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --page: #f2f0eb;
+      --surface: #fffefb;
+      --ink: #18201e;
+      --muted: #5d6864;
+      --line: #d8d6cf;
+      --key: #e7e5df;
+      --key-hover: #dcdbd4;
+      --key-special: #d8ddd9;
+      --operator: #c96e24;
+      --operator-hover: #b85f1d;
+      --operator-ink: #fffaf4;
+      --display: #18201e;
+      --display-ink: #f7faf8;
+      --display-muted: #aebbb5;
+      --tithe: #176c51;
+      --tithe-hover: #115c44;
+      --tithe-ink: #f3fff9;
+      --focus: #1676d2;
+      --shadow: 0 20px 56px rgba(28, 33, 31, .12);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #121516;
+        --surface: #1b1f20;
+        --ink: #f0f3f1;
+        --muted: #a5afab;
+        --line: #343a39;
+        --key: #2b3030;
+        --key-hover: #353b3a;
+        --key-special: #333a38;
+        --operator: #dc7c31;
+        --operator-hover: #ed8c3f;
+        --operator-ink: #18130e;
+        --display: #0c0f0f;
+        --display-ink: #f3f8f5;
+        --display-muted: #8f9b96;
+        --tithe: #2a9571;
+        --tithe-hover: #35a980;
+        --tithe-ink: #071510;
+        --focus: #6db4ff;
+        --shadow: 0 22px 64px rgba(0, 0, 0, .34);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button { font: inherit; }
+
+    main {
+      width: min(100%, 520px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: max(14px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+    }
+
+    .calculator {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .display {
+      min-height: 142px;
+      padding: 22px 22px 18px;
+      background: var(--display);
+      color: var(--display-ink);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .expression {
+      min-height: 25px;
+      margin-bottom: 8px;
+      color: var(--display-muted);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: .93rem;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .value {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(2.35rem, 13vw, 4.6rem);
+      font-weight: 500;
+      line-height: 1.02;
+      letter-spacing: -.055em;
+      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tape {
+      padding: 15px 18px 13px;
+      border-bottom: 1px solid var(--line);
+      min-height: 104px;
+    }
+
+    .tape-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .tape-title {
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .clear-tape {
+      min-height: 30px;
+      padding: 4px 7px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .clear-tape[hidden] { display: none; }
+
+    .history {
+      min-height: 48px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 5px;
+    }
+
+    .history li {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      color: var(--muted);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: .82rem;
+      line-height: 1.25;
+    }
+
+    .history .history-expression {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history .history-result {
+      flex: 0 0 auto;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: .84rem;
+      line-height: 1.4;
+    }
+
+    .controls { padding: 14px; }
+
+    .utility-row {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(64px, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tithe-button {
+      width: 100%;
+      min-height: 60px;
+      border: 0;
+      border-radius: 15px;
+      background: var(--tithe);
+      color: var(--tithe-ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: .03em;
+    }
+
+    .tithe-button .ten {
+      padding-left: 10px;
+      border-left: 1px solid color-mix(in srgb, var(--tithe-ink) 38%, transparent);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: .86rem;
+      font-weight: 500;
+      letter-spacing: 0;
+      opacity: .9;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .key {
+      min-width: 0;
+      min-height: 61px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--key);
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 1.22rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .08);
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    .key.special { background: var(--key-special); font-size: 1rem; }
+    .key.operator { background: var(--operator); color: var(--operator-ink); }
+    .key.zero { grid-column: span 2; text-align: left; padding-left: 25%; }
+    .key.backspace { font-size: 1.12rem; }
+
+    .key:focus-visible,
+    .tithe-button:focus-visible,
+    .clear-tape:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .key:active, .tithe-button:active { transform: translateY(1px); }
+
+    @media (hover: hover) {
+      .key:hover { background: var(--key-hover); }
+      .key.special:hover { background: var(--key-hover); }
+      .key.operator:hover { background: var(--operator-hover); }
+      .tithe-button:hover { background: var(--tithe-hover); }
+      .clear-tape:hover { color: var(--ink); }
+    }
+
+    .keyboard-note {
+      margin: 11px 4px 0;
+      color: var(--muted);
+      text-align: center;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: .7rem;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 420px) {
+      main { align-items: flex-start; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; }
+      .calculator { min-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
+      .display { min-height: 156px; padding-top: max(24px, env(safe-area-inset-top)); }
+      .controls { margin-top: auto; padding: 12px 12px max(12px, env(safe-area-inset-bottom)); }
+      .key { min-height: clamp(56px, 8.4vh, 70px); }
+      .keyboard-note { display: none; }
+      .tape { min-height: 99px; }
+    }
+
+    @media (max-height: 690px) and (max-width: 420px) {
+      .display { min-height: 126px; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: 13px; }
+      .tape { min-height: 84px; padding-top: 10px; padding-bottom: 9px; }
+      .tape-head { margin-bottom: 5px; }
+      .controls { padding-top: 9px; }
+      .tithe-button { min-height: 49px; }
+      .key { min-height: 49px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="calculator" aria-label="Calculator">
+      <div class="display" aria-live="polite" aria-atomic="true">
+        <div class="expression" id="expression">Ready</div>
+        <div class="value" id="display">0</div>
+      </div>
+
+      <section class="tape" aria-label="Recent calculations">
+        <div class="tape-head">
+          <span class="tape-title">Recent</span>
+          <button class="clear-tape" id="clearTape" type="button" hidden>Clear tape</button>
+        </div>
+        <ol class="history" id="history"></ol>
+        <div class="empty" id="emptyHistory">Calculations will appear here.</div>
+      </section>
+
+      <div class="controls">
+        <div class="utility-row">
+          <button class="tithe-button" type="button" data-action="tithe" aria-label="Calculate ten percent tithe">
+            <span>TITHE</span><span class="ten">10%</span>
+          </button>
+          <button class="key special backspace" type="button" data-action="backspace" aria-label="Backspace">⌫</button>
+        </div>
+
+        <div class="keypad" aria-label="Calculator keys">
+          <button class="key special" type="button" data-action="clear" aria-label="Clear">C</button>
+          <button class="key special" type="button" data-action="sign" aria-label="Toggle positive or negative">+/−</button>
+          <button class="key special" type="button" data-action="percent" aria-label="Percent">%</button>
+          <button class="key operator" type="button" data-operator="/" aria-label="Divide">÷</button>
+
+          <button class="key" type="button" data-digit="7">7</button>
+          <button class="key" type="button" data-digit="8">8</button>
+          <button class="key" type="button" data-digit="9">9</button>
+          <button class="key operator" type="button" data-operator="*" aria-label="Multiply">×</button>
+
+          <button class="key" type="button" data-digit="4">4</button>
+          <button class="key" type="button" data-digit="5">5</button>
+          <button class="key" type="button" data-digit="6">6</button>
+          <button class="key operator" type="button" data-operator="-" aria-label="Subtract">−</button>
+
+          <button class="key" type="button" data-digit="1">1</button>
+          <button class="key" type="button" data-digit="2">2</button>
+          <button class="key" type="button" data-digit="3">3</button>
+          <button class="key operator" type="button" data-operator="+" aria-label="Add">+</button>
+
+          <button class="key zero" type="button" data-digit="0">0</button>
+          <button class="key" type="button" data-action="decimal" aria-label="Decimal point">.</button>
+          <button class="key operator" type="button" data-action="equals" aria-label="Equals">=</button>
+        </div>
+        <div class="keyboard-note">Keyboard ready · press T for tithe</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var displayEl = document.getElementById("display");
+      var expressionEl = document.getElementById("expression");
+      var historyEl = document.getElementById("history");
+      var emptyHistoryEl = document.getElementById("emptyHistory");
+      var clearTapeButton = document.getElementById("clearTape");
+      var calculator = document.querySelector(".calculator");
+
+      var current = "0";
+      var accumulator = null;
+      var pendingOperator = null;
+      var waitingForOperand = false;
+      var lastOperator = null;
+      var lastOperand = null;
+      var justEvaluated = false;
+      var expression = "Ready";
+      var history = [];
+
+      var symbols = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+
+      function normalizeNumber(number) {
+        if (!Number.isFinite(number)) return number;
+        if (Object.is(number, -0)) return 0;
+        return Number.parseFloat(number.toPrecision(14));
+      }
+
+      function rawNumber(number) {
+        if (!Number.isFinite(number)) return "Error";
+        number = normalizeNumber(number);
+        var absolute = Math.abs(number);
+        if ((absolute !== 0 && absolute < 1e-10) || absolute >= 1e14) {
+          return number.toExponential(9).replace(/\.0+(?=e)/, "").replace(/(\.\d*?)0+(?=e)/, "$1");
+        }
+        return String(number);
+      }
+
+      function formatValue(value) {
+        if (value === "Error") return value;
+        if (value === "-") return value;
+        var number = Number(value);
+        if (!Number.isFinite(number)) return "Error";
+        if (value.indexOf("e") !== -1 || value.indexOf("E") !== -1) return value;
+
+        var parts = value.split(".");
+        var integer = parts[0];
+        var sign = integer.charAt(0) === "-" ? "-" : "";
+        var digits = sign ? integer.slice(1) : integer;
+        var grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return sign + grouped + (parts.length > 1 ? "." + parts[1] : "");
+      }
+
+      function formatCompact(number) {
+        return formatValue(rawNumber(number));
+      }
+
+      function updateDisplay() {
+        displayEl.textContent = formatValue(current);
+        expressionEl.textContent = expression;
+      }
+
+      function renderHistory() {
+        historyEl.innerHTML = "";
+        history.slice(0, 3).forEach(function (item) {
+          var li = document.createElement("li");
+          var left = document.createElement("span");
+          var right = document.createElement("span");
+          left.className = "history-expression";
+          right.className = "history-result";
+          left.textContent = item.label;
+          right.textContent = item.result;
+          li.appendChild(left);
+          li.appendChild(right);
+          historyEl.appendChild(li);
+        });
+        var hasHistory = history.length > 0;
+        emptyHistoryEl.hidden = hasHistory;
+        clearTapeButton.hidden = !hasHistory;
+      }
+
+      function addHistory(label, result) {
+        history.unshift({ label: label, result: result });
+        if (history.length > 6) history.pop();
+        renderHistory();
+      }
+
+      function resetAfterError() {
+        if (current !== "Error") return false;
+        current = "0";
+        accumulator = null;
+        pendingOperator = null;
+        waitingForOperand = false;
+        lastOperator = null;
+        lastOperand = null;
+        justEvaluated = false;
+        expression = "Ready";
+        return true;
+      }
+
+      function inputDigit(digit) {
+        resetAfterError();
+        if (waitingForOperand || justEvaluated) {
+          current = digit;
+          waitingForOperand = false;
+          if (justEvaluated) {
+            accumulator = null;
+            pendingOperator = null;
+            expression = "Ready";
+          }
+          justEvaluated = false;
+        } else if (current === "0") {
+          current = digit;
+        } else if (current === "-0") {
+          current = "-" + digit;
+        } else if (current.replace(/[-.]/g, "").length < 16) {
+          current += digit;
+        }
+        updateDisplay();
+      }
+
+      function inputDecimal() {
+        resetAfterError();
+        if (waitingForOperand || justEvaluated) {
+          current = "0.";
+          waitingForOperand = false;
+          if (justEvaluated) {
+            accumulator = null;
+            pendingOperator = null;
+            expression = "Ready";
+          }
+          justEvaluated = false;
+        } else if (current.indexOf(".") === -1 && current.indexOf("e") === -1) {
+          current += ".";
+        }
+        updateDisplay();
+      }
+
+      function calculate(left, right, operator) {
+        if (operator === "+") return normalizeNumber(left + right);
+        if (operator === "-") return normalizeNumber(left - right);
+        if (operator === "*") return normalizeNumber(left * right);
+        if (operator === "/") return right === 0 ? NaN : normalizeNumber(left / right);
+        return right;
+      }
+
+      function handleOperator(operator) {
+        if (current === "Error") return;
+        var input = Number(current);
+
+        if (pendingOperator && waitingForOperand) {
+          pendingOperator = operator;
+          expression = formatCompact(accumulator) + " " + symbols[operator];
+          updateDisplay();
+          return;
+        }
+
+        if (accumulator === null || justEvaluated) {
+          accumulator = input;
+        } else if (pendingOperator) {
+          var result = calculate(accumulator, input, pendingOperator);
+          if (!Number.isFinite(result)) {
+            showError(formatCompact(accumulator) + " " + symbols[pendingOperator] + " " + formatCompact(input));
+            return;
+          }
+          accumulator = result;
+          current = rawNumber(result);
+        }
+
+        pendingOperator = operator;
+        waitingForOperand = true;
+        justEvaluated = false;
+        expression = formatCompact(accumulator) + " " + symbols[operator];
+        updateDisplay();
+      }
+
+      function equals() {
+        if (current === "Error") return;
+        var operator = pendingOperator;
+        var left = accumulator;
+        var right = Number(current);
+
+        if (!operator) {
+          if (!lastOperator || !justEvaluated) return;
+          operator = lastOperator;
+          left = Number(current);
+          right = lastOperand;
+        }
+
+        if (waitingForOperand && pendingOperator) right = accumulator;
+        var result = calculate(left, right, operator);
+        var label = formatCompact(left) + " " + symbols[operator] + " " + formatCompact(right);
+
+        if (!Number.isFinite(result)) {
+          showError(label);
+          return;
+        }
+
+        current = rawNumber(result);
+        expression = label + " =";
+        addHistory(label, formatCompact(result));
+        accumulator = result;
+        lastOperator = operator;
+        lastOperand = right;
+        pendingOperator = null;
+        waitingForOperand = false;
+        justEvaluated = true;
+        updateDisplay();
+      }
+
+      function showError(label) {
+        current = "Error";
+        expression = label + " is undefined";
+        accumulator = null;
+        pendingOperator = null;
+        waitingForOperand = false;
+        justEvaluated = true;
+        updateDisplay();
+      }
+
+      function clearAll() {
+        current = "0";
+        accumulator = null;
+        pendingOperator = null;
+        waitingForOperand = false;
+        lastOperator = null;
+        lastOperand = null;
+        justEvaluated = false;
+        expression = "Ready";
+        updateDisplay();
+      }
+
+      function toggleSign() {
+        resetAfterError();
+        if (current === "0") {
+          current = "-0";
+        } else if (current.charAt(0) === "-") {
+          current = current.slice(1);
+        } else {
+          current = "-" + current;
+        }
+        justEvaluated = false;
+        updateDisplay();
+      }
+
+      function percent() {
+        if (current === "Error") return;
+        var original = Number(current);
+        var result = normalizeNumber(original / 100);
+        current = rawNumber(result);
+        expression = formatCompact(original) + "%";
+        justEvaluated = true;
+        waitingForOperand = false;
+        addHistory(formatCompact(original) + "%", formatCompact(result));
+        updateDisplay();
+      }
+
+      function tithe() {
+        if (current === "Error") return;
+        var original = Number(current);
+        var result = normalizeNumber(original * 0.10);
+        current = rawNumber(result);
+        expression = "10% tithe of " + formatCompact(original);
+        justEvaluated = true;
+        waitingForOperand = false;
+        addHistory("Tithe · " + formatCompact(original) + " × 10%", formatCompact(result));
+        updateDisplay();
+      }
+
+      function backspace() {
+        if (current === "Error") {
+          clearAll();
+          return;
+        }
+        if (waitingForOperand || justEvaluated) return;
+        if (current.length <= 1 || (current.length === 2 && current.charAt(0) === "-")) {
+          current = "0";
+        } else {
+          current = current.slice(0, -1);
+        }
+        updateDisplay();
+      }
+
+      function handleAction(action) {
+        if (action === "clear") clearAll();
+        if (action === "sign") toggleSign();
+        if (action === "percent") percent();
+        if (action === "decimal") inputDecimal();
+        if (action === "equals") equals();
+        if (action === "backspace") backspace();
+        if (action === "tithe") tithe();
+      }
+
+      calculator.addEventListener("click", function (event) {
+        var button = event.target.closest("button");
+        if (!button) return;
+        if (button.dataset.digit) inputDigit(button.dataset.digit);
+        else if (button.dataset.operator) handleOperator(button.dataset.operator);
+        else if (button.dataset.action) handleAction(button.dataset.action);
+      });
+
+      clearTapeButton.addEventListener("click", function () {
+        history = [];
+        renderHistory();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        var key = event.key;
+        var handled = true;
+        if (/^\d$/.test(key)) inputDigit(key);
+        else if (key === "." || key === ",") inputDecimal();
+        else if (key === "+" || key === "-" || key === "*" || key === "/") handleOperator(key);
+        else if (key === "%") percent();
+        else if (key === "=" || key === "Enter") equals();
+        else if (key === "Backspace" || key === "Delete") backspace();
+        else if (key === "Escape" || key.toLowerCase() === "c") clearAll();
+        else if (key.toLowerCase() === "t") tithe();
+        else handled = false;
+        if (handled) event.preventDefault();
+      });
+
+      updateDisplay();
+      renderHistory();
+    })();
+  </script>
+</body>
+</html>
