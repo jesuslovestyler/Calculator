@@ -1,9 +1,8 @@
 # Calculator
 
-A fast, clean calculator for everyday use — big touch-friendly keys, a short history tape, and keyboard support on desktop.
+A clean calculator for everyday math, with one extra key: press **T** to figure a tithe — ten percent for giving — from whatever number is on screen.
 
-Includes a one-tap **TITHE** key that computes 10% of the current value.
+**Live:** https://jesuslovestyler.github.io/Calculator/
+**Home:** https://jesuslovestyler.com/
 
-No clutter, no ads, no tracking — just a tool.
-
-Built with Muse artifacts.
+One self-contained page: no account, no ads, nothing to buy. Released into the public domain (Unlicense — see LICENSE). Built by Tyler with Noki.
